@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import Aux from "../../hoc/Auxiliar";
 import Burger from "../../components/Burger";
 import BuildControls from "../../components/Burger/components/BuildControls";
+import Modal from "../../components/Burger/components/UI/Modal";
+import OrderSummary from "../../components/Burger/components/OrderSummary";
 
 const INGREDIENT_PRICES = {
     salad: 0.5,
@@ -21,8 +23,21 @@ class BuilderBurger extends Component {
                 cheese: 0,
                 meat: 0
             },
-            totalPrice: 4
+            totalPrice: 4,
+            purchasable: false,
+            purchasing: false
         }
+    }
+
+    updatePurchaseState(ingredients) {
+        const sum = Object.keys(ingredients)
+            .map(igKey => {
+                return ingredients[igKey]
+            })
+            .reduce((sum, el) => {
+                return sum + el
+            }, 0)
+        this.setState({purchasable: sum > 0})
     }
 
     addIngredientHandler = type => {
@@ -56,7 +71,17 @@ class BuilderBurger extends Component {
                 ingredients: updatedIngredients,
                 totalPrice: newPrice
             });
+
+            this.updatePurchaseState(updatedIngredients)
         }
+    }
+
+    purchaseHandler = () => {
+        this.setState((prevState) => {
+            return {
+                 purchasing: !prevState.purchasing
+            }
+        });
     }
 
 
@@ -74,12 +99,21 @@ class BuilderBurger extends Component {
         }
         return (
             <Aux>
+                {this.state.purchasing ?
+                    <Modal show={this.state.purchasing} dismiss={this.purchaseHandler}>
+                        <OrderSummary ingredients={this.state.ingredients}/>
+                    </Modal>
+                    : null}
+
                 <Burger ingredients={this.state.ingredients} />
                 <BuildControls
                     onAddIngredientHandler={this.addIngredientHandler}
                     onRemoveIngredientHandler={this.removeIngredientHandler}
                     disabled={disableLessButtons}
                     disabledMoreButtons={disableMoreButtons}
+                    purchasable={this.state.purchasable}
+                    price={this.state.totalPrice}
+                    onPurchaseHandler={this.purchaseHandler}
                 />
             </Aux>
         );
