@@ -84,6 +84,9 @@ class BuilderBurger extends Component {
         });
     }
 
+    purchaseContinueHandler = () => {
+        alert('You\'re continuing...')
+    }
 
     render() {
         const disableLessButtons = {
@@ -101,7 +104,11 @@ class BuilderBurger extends Component {
             <Aux>
                 {this.state.purchasing ?
                     <Modal show={this.state.purchasing} dismiss={this.purchaseHandler}>
-                        <OrderSummary ingredients={this.state.ingredients}/>
+                        <OrderSummary
+                            summary={this.state.totalPrice}
+                            dismiss={this.purchaseHandler}
+                            purchaseContinue={this.purchaseContinueHandler}
+                            ingredients={this.state.ingredients}/>
                     </Modal>
                     : null}
 
