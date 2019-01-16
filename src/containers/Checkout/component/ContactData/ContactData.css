@@ -1,0 +1,28 @@
+.ContactData {
+    margin: 20px auto;
+    width: 80%;
+    text-align: center;
+    box-shadow: 0 2px 3px #ccc;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 600px) {
+    .ContactData {
+        width: 500px;
+    }
+}
+
+.InputError {
+    border: 1px solid red;
+}
+
+.ErrorMessage {
+    text-align: left;
+}
+
+.ErrorMessage span {
+    color: red;
+    padding: 0 10px;
+    display: block;
+}

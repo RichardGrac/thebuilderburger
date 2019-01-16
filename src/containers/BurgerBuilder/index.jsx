@@ -2,12 +2,13 @@ import React, {Component} from 'react';
 import Aux from "../../hoc/Auxiliar";
 import Burger from "../../components/Burger";
 import BuildControls from "../../components/Burger/components/BuildControls";
-import Modal from "../../components/Burger/components/UI/Modal";
+import Modal from "../../components/UI/Modal";
 import OrderSummary from "../../components/Burger/components/OrderSummary";
-import Spinner from "../../components/Burger/components/UI/Spinner";
+import Spinner from "../../components/UI/Spinner";
 import withErrorHandler from "../../hoc/withErrorHandler"
 
 import axios from "../../axios/orders";
+import {CHECKOUT_URL} from '../../utilities/constants'
 
 
 const INGREDIENT_PRICES = {
@@ -26,7 +27,6 @@ class BuilderBurger extends Component {
             totalPrice: 4,
             purchasable: false,
             purchasing: false,
-            loading: false,
             error: false
         }
     }
@@ -34,7 +34,8 @@ class BuilderBurger extends Component {
     componentDidMount() {
         axios.get('ingredients.json')
             .then(response => {
-                this.setState({ingredients: response.data})
+                this.setState({ingredients: response.data},
+                    () => this.updatePurchaseState(this.state.ingredients))
         })
             .catch(error => {
                 this.setState({error:true});
@@ -97,30 +98,16 @@ class BuilderBurger extends Component {
     }
 
     purchaseContinueHandler = () => {
-        this.setState({loading: true})
-        const order = {
-            ingredients: this.state.ingredients,
-            price: this.state.totalPrice,
-            customer: {
-                name: 'Richard Grac',
-                address: {
-                    street: 'Central St',
-                    zipCode: 20000,
-                    country: 'Mexico'
-                },
-                email: 'Richard_Grac@hotmail.com'
-            },
-            deliveryOrder: 'fastest'
+        let queryParams = []
+        for(let i in this.state.ingredients) {
+            queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]))
         }
-        axios.post('/orders.json', order)
-            .then(response => {
-                console.log(response)
-                this.setState({loading: false, purchasing: false})
-            })
-            .catch(error => {
-                console.log(error)
-                this.setState({loading: false, purchasing: false});
-            })
+        queryParams.push('totalPrice=' + this.state.totalPrice)
+
+        this.props.history.push({
+            pathname: CHECKOUT_URL,
+            search: queryParams.join('&')
+        })
     }
 
     render() {

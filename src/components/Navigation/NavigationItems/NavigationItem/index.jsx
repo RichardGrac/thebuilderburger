@@ -1,14 +1,17 @@
 import React from 'react'
 import Classes from './NavigationItem.css'
+import {NavLink} from 'react-router-dom'
+import {HOME_URL} from '../../../../utilities/constants'
 
 const NavigationItem = (props) => {
     return (
         <React.Fragment>
             <li className={Classes.NavigationItem}>
-                <a href={props.link}
-                   className={props.active ? Classes.active : null}>
+                <NavLink to={props.link}
+                         exact={props.link === HOME_URL}
+                         activeClassName={Classes.active}>
                     {props.children}
-                </a>
+                </NavLink>
             </li>
         </React.Fragment>
     )

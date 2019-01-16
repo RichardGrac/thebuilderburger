@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Aux from "../Auxiliar";
-import Modal from "../../components/Burger/components/UI/Modal";
+import Modal from "../../components/UI/Modal";
 
 const withErrorHandler = (WrappedComponent, axios) => {
     // Anonymous class

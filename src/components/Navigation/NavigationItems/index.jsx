@@ -1,13 +1,14 @@
 import React from 'react'
 import Classes from './NavigationItems.css'
 import NavigationItem from "./NavigationItem";
+import {HOME_URL, ORDERS_URL} from '../../../utilities/constants'
 
-const NavigationItems = (props) => {
+const NavigationItems = () => {
     return (
         <React.Fragment>
             <ul className={Classes.NavigationItems}>
-                <NavigationItem link='/' active>Burger Builder</NavigationItem>
-                <NavigationItem link='/'>Checkout</NavigationItem>
+                <NavigationItem link={HOME_URL}>Burger Builder</NavigationItem>
+                <NavigationItem link={ORDERS_URL}>Orders</NavigationItem>
             </ul>
         </React.Fragment>
     )
