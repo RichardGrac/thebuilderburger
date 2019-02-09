@@ -22,7 +22,6 @@ const Burger = (props) => {
         transformedIngredients = <p>Please, start adding ingredients!</p>
     }
 
-    // console.log(transformedIngredients)
     return (
         <div className={Classes.Burger}>
             <Ingredient type='bread-top'/>

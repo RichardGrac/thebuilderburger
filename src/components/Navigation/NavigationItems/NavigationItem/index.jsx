@@ -6,7 +6,7 @@ import {HOME_URL} from '../../../../utilities/constants'
 const NavigationItem = (props) => {
     return (
         <React.Fragment>
-            <li className={Classes.NavigationItem}>
+            <li onClick={props.onClick} className={Classes.NavigationItem}>
                 <NavLink to={props.link}
                          exact={props.link === HOME_URL}
                          activeClassName={Classes.active}>

@@ -2,22 +2,23 @@ import React, {Component} from 'react'
 import Order from './Order/Order'
 import axios from '../../axios/orders'
 import withErrorHandler from '../../hoc/withErrorHandler'
+import {connect} from 'react-redux'
+import {fetchOrders} from '../../redux/orders/actions/orders'
 
 class Orders extends Component {
 
     state = {
-        orders: null
+        orders: this.props.orders
     }
 
     componentDidMount() {
-        axios.get('orders.json')
-            .then(response => {
-                console.log('Response: ', response)
-                this.setState({orders:response.data})
-            })
-            .catch(error => {
-                console.error('Error getting orders: ', error)
-            })
+        this.props.fetchOrders(this.props.tokenId, this.props.userId)
+    }
+
+    componentWillReceiveProps(nextProps, nextContext) {
+        this.setState({
+            orders: nextProps.orders
+        })
     }
 
     render() {
@@ -40,4 +41,18 @@ class Orders extends Component {
     }
 }
 
-export default withErrorHandler(Orders, axios)
+const mapStateToProps = state => {
+    return {
+        orders: state.ordersReducer.orders,
+        tokenId: state.authReducer.tokenId,
+        userId: state.authReducer.userId
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return {
+        fetchOrders: (tokenId, userId) => dispatch(fetchOrders(tokenId, userId))
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(Orders, axios))

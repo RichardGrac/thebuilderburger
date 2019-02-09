@@ -1,14 +1,15 @@
 import React, {Component} from 'react'
 import Button from '../../../../components/UI/Button'
 import Classes from './ContactData.css'
-import axios from '../../../../axios/orders'
 import Spinner from '../../../../components/UI/Spinner'
 import {withRouter} from 'react-router-dom'
 import Input from '../../../../components/UI/Input/input'
-// import {isObjectEmpty} from '../../../../utilities/functions'
-// import {CHECKOUT_URL} from '../../../../utilities/constants'
-
-const emailRegex = new RegExp(/^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/)
+import {connect} from 'react-redux'
+import {onFetchInitialIngredients} from '../../../../redux/ingredients/actions/ingredients'
+import {purchaseBurgerStart, resetBurgerPurchase} from '../../../../redux/orders/actions/orders'
+import Modal from '../../../../components/UI/Modal'
+// eslint-disable-next-line
+const emailRegex = new RegExp(/^[-A-Z-a-z0-9~!$%^&*_=+}{\'?]+(\.[-A-Z-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/)
 
 class ContactData extends Component {
 
@@ -32,13 +33,28 @@ class ContactData extends Component {
     }
 
     componentDidMount() {
-        /* To ensure that we cannot continue with the Contact Form */
-        // if (isObjectEmpty(this.props.ingredients)) {
-        //     this.props.history.replace(CHECKOUT_URL)
-        // }
         this.setState({
             ingredients: this.props.ingredients
         })
+    }
+
+    componentWillReceiveProps(nextProps, nextContext) {
+        if (nextProps.purchaseSuccess) {
+            this.setState({loading: false}, () => {
+                this.props.resetBurgerPurchase()
+                this.props.onFetchInitialIngredients()
+                this.props.history.push('/')
+            })
+        }
+
+        this.setState({
+            purchaseFail: nextProps.purchaseFail,
+            loading: false
+        })
+    }
+
+    dismissFailModal = () => {
+        this.setState({purchaseFail: false})
     }
 
     orderHandler = (event) => {
@@ -72,17 +88,11 @@ class ContactData extends Component {
             deliveryOrder,
             ingredients: this.props.ingredients,
             price: this.props.totalPrice,
+            date: Date.now(),
+            userId: this.props.userId
         }
 
-        axios.post('/orders.json', order)
-            .then(response => {
-                console.log('response', response)
-                this.setState({loading: false}, () => this.props.history.push('/'))
-            })
-            .catch(error => {
-                console.error(error)
-                this.setState({loading: false}, () => window.alert('Something went wrong with the Order requested'))
-            })
+        this.props.onOrderBurger(order, this.props.tokenId)
     }
 
     onHandleValue = e => {
@@ -95,31 +105,31 @@ class ContactData extends Component {
         switch (id) {
             case 'name':
                 if (value.length < 4) {
-                    errors.push('Name should at least 4 characters')
+                    errors = errors.concat('Name field should has at least 4 characters')
                 }
                 formErrors.name = errors
                 break;
 
             case 'street':
                 if (value.length < 1) {
-                    errors.push('Street should not be empty')
+                    errors = errors.concat('Street field should not be empty')
                 }
                 formErrors.street = errors
                 break;
 
             case 'email':
                 if (value.length < 1) {
-                    errors.push('Email should not be empty')
+                    errors = errors.concat('Email should not be empty')
                 }
                 if (!emailRegex.test(value)) {
-                    errors.push('Invalid email')
+                    errors = errors.concat('Invalid email')
                 }
                 formErrors.email = errors
                 break;
 
             case 'postalCode':
                 if (value.length < 5 || value.length > 6) {
-                    errors.push('Invalid Zip Code')
+                    errors = errors.concat('Invalid Zip Code')
                 }
                 formErrors.postalCode = errors
                 break;
@@ -139,6 +149,11 @@ class ContactData extends Component {
         const {errorValidations, name, email, street, postalCode, deliveryOrder} = this.state
         return (
             <div className={Classes.ContactData}>
+
+                <Modal show={this.state.purchaseFail} dismiss={this.dismissFailModal}>
+                    <p>There were problems saving the order</p>
+                </Modal>
+
                 {this.state.loading ? <Spinner /> : (
                     <div>
                         <h4>Enter your Contact Data</h4>
@@ -223,4 +238,22 @@ class ContactData extends Component {
     }
 }
 
-export default withRouter(ContactData)
+const mapStateToProps = state => {
+    return {
+        purchaseSuccess: state.ordersReducer.purchaseSuccess,
+        purchaseFail: state.ordersReducer.purchaseFail,
+        errorMessage: state.ordersReducer.errorMessage,
+        tokenId: state.authReducer.tokenId,
+        userId: state.authReducer.userId
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return {
+        onOrderBurger: (order, tokenId) => dispatch(purchaseBurgerStart(order, tokenId)),
+        resetBurgerPurchase: () => dispatch(resetBurgerPurchase()),
+        onFetchInitialIngredients: () => dispatch(onFetchInitialIngredients())
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(withRouter(ContactData))

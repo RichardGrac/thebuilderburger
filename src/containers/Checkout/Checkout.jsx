@@ -6,6 +6,8 @@ import ContactData from './component/ContactData/ContactData'
 import {isObjectEmpty} from '../../utilities/functions'
 import {Redirect} from 'react-router'
 
+import {connect} from 'react-redux'
+
 class Checkout extends Component {
 
     state = {
@@ -13,15 +15,8 @@ class Checkout extends Component {
         ingredients: {}
     }
 
-    componentDidMount() {
-        const query = new URLSearchParams(this.props.location.search)
-        let ingredients = {}
-        let totalPrice
-        for(let param of query.entries()) {
-            ingredients[param[0]] = +param[1]
-        }
-        totalPrice = ingredients.totalPrice
-        delete ingredients.totalPrice
+    componentWillReceiveProps(nextProps) {
+        const {ingredients, totalPrice} = nextProps
         this.setState({ingredients, totalPrice})
     }
 
@@ -56,4 +51,17 @@ class Checkout extends Component {
     }
 }
 
-export default Checkout
+const mapStateToProps = state => {
+    return {
+        ingredients: state.ingredientsReducer.ingredients,
+        totalPrice: state.ingredientsReducer.totalPrice
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return {
+
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Checkout)

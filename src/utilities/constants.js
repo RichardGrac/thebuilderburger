@@ -1,4 +1,7 @@
-export const HOME_URL = '/';
-export const CHECKOUT_URL = '/Checkout';
-export const CONTACT_URL = '/Checkout/Contact-data';
-export const ORDERS_URL = '/Orders';
+export const HOME_URL = '/'
+export const CHECKOUT_URL = '/Checkout'
+export const CONTACT_URL = '/Checkout/Contact-data'
+export const ORDERS_URL = '/Orders'
+export const SIGN_IN = '/Sign-in'
+export const SIGN_UP = '/Sign-up'
+export const LOG_OUT = '/Logout'

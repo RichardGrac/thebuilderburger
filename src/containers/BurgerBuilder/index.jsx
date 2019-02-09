@@ -8,7 +8,16 @@ import Spinner from "../../components/UI/Spinner";
 import withErrorHandler from "../../hoc/withErrorHandler"
 
 import axios from "../../axios/orders";
-import {CHECKOUT_URL} from '../../utilities/constants'
+import {CHECKOUT_URL, SIGN_IN} from '../../utilities/constants'
+
+import {connect} from 'react-redux'
+import {
+    onAddIngredient, onFetchInitialIngredients, onRemoveIngredient, onSaveIngredients,
+} from '../../redux/ingredients/actions/ingredients'
+import {isObjectEmpty} from '../../utilities/functions'
+import {bindActionCreators} from 'redux'
+import InformativeModal from './components/InformativeModal'
+import {cleanRedirect} from '../../redux/Authentication/actions/auth'
 
 
 const INGREDIENT_PRICES = {
@@ -23,26 +32,41 @@ class BuilderBurger extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            ingredients: null,
-            totalPrice: 4,
+            ingredients: this.props.ingredients,
+            totalPrice: this.props.totalPrice,
+
+            loading: false,
             purchasable: false,
             purchasing: false,
-            error: false
+            error: false,
+            loginToContinueModal: false
         }
     }
 
     componentDidMount() {
-        axios.get('ingredients.json')
-            .then(response => {
-                this.setState({ingredients: response.data},
-                    () => this.updatePurchaseState(this.state.ingredients))
-        })
-            .catch(error => {
-                this.setState({error:true});
-            })
+        if (this.props.redirectTo === CHECKOUT_URL) {
+            this.props.cleanRedirect()
+            this.props.history.push(CHECKOUT_URL)
+        }
+
+        if (!this.props.alreadySetInitialState) {
+            this.props.onFetchInitialIngredients()
+        }
+        this.updatePurchaseState()
     }
 
-    updatePurchaseState(ingredients) {
+    componentWillReceiveProps(nextProps) {
+        this.setState({
+            ingredients: nextProps.ingredients,
+            totalPrice: nextProps.totalPrice,
+            error: nextProps.error
+        }, () => this.updatePurchaseState(this.state.ingredients))
+    }
+
+    updatePurchaseState(ingredients = this.state.ingredients) {
+        if (isObjectEmpty(ingredients)) {
+            return
+        }
         const sum = Object.keys(ingredients)
             .map(igKey => {
                 return ingredients[igKey]
@@ -53,11 +77,11 @@ class BuilderBurger extends Component {
         this.setState({purchasable: sum > 0})
     }
 
-    addIngredientHandler = type => {
+    onAddIngredientHandler = type => {
         this.UpdatingBurger(type, 1)
     }
 
-    removeIngredientHandler = type => {
+    onRemoveIngredientHandler = type => {
         this.UpdatingBurger(type, -1)
     }
 
@@ -67,25 +91,15 @@ class BuilderBurger extends Component {
             console.log(type + ' counter is equals 0, You cannot rest this ingredient')
             return
         } else {
-            // Ingredient update
-            const updatedCounted = oldCount + moreOrLessIngredient
-            const updatedIngredients = {
-                ...this.state.ingredients
-            }
-
-            updatedIngredients[type] = updatedCounted
-
             // Price update
             const priceAddition = INGREDIENT_PRICES[type]
             const oldPrice = this.state.totalPrice
             const newPrice = oldPrice + (priceAddition * moreOrLessIngredient)
 
-            this.setState({
-                ingredients: updatedIngredients,
-                totalPrice: newPrice
-            });
-
-            this.updatePurchaseState(updatedIngredients)
+            moreOrLessIngredient > 0 ?
+                this.props.onAddIngredient(type, newPrice) :
+                this.props.onRemoveIngredient(type, newPrice)
+            this.updatePurchaseState()
         }
     }
 
@@ -98,15 +112,28 @@ class BuilderBurger extends Component {
     }
 
     purchaseContinueHandler = () => {
-        let queryParams = []
-        for(let i in this.state.ingredients) {
-            queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]))
+        this.props.onSaveIngredients({...this.state.ingredients}, this.state.totalPrice)
+        if (this.props.isLogged) {
+            this.props.history.push({
+                pathname: CHECKOUT_URL,
+            })
+        } else {
+            this.setState({
+                loginToContinueModal: true
+            })
         }
-        queryParams.push('totalPrice=' + this.state.totalPrice)
+    }
 
+    dismissInformativeModal = () => {
+        this.setState({
+            loginToContinueModal: false
+        })
+    }
+
+    goToLoginToContinue = () => {
         this.props.history.push({
-            pathname: CHECKOUT_URL,
-            search: queryParams.join('&')
+            pathname: SIGN_IN,
+            hash: '#purchasing'
         })
     }
 
@@ -125,7 +152,7 @@ class BuilderBurger extends Component {
 
         let orderSummary = null
 
-        let burger = this.state.error? (
+        let burger = this.state.error ? (
             <h2 style={{textAlign: 'center'}}>
                 Ingredients can't be loaded
             </h2>) : <Spinner />
@@ -136,13 +163,14 @@ class BuilderBurger extends Component {
                 <Aux>
                     <Burger ingredients={this.state.ingredients} />
                     <BuildControls
-                        onAddIngredientHandler={this.addIngredientHandler}
-                        onRemoveIngredientHandler={this.removeIngredientHandler}
+                        onAddIngredientHandler={this.onAddIngredientHandler}
+                        onRemoveIngredientHandler={this.onRemoveIngredientHandler}
                         disabled={disableLessButtons}
                         disabledMoreButtons={disableMoreButtons}
                         purchasable={this.state.purchasable}
                         price={this.state.totalPrice}
                         onPurchaseHandler={this.purchaseHandler}
+                        resetBuilding={this.props.onFetchInitialIngredients}
                     />
                 </Aux>
             )
@@ -161,17 +189,48 @@ class BuilderBurger extends Component {
 
         return (
             <Aux>
-                {this.state.purchasing ?
+                {this.state.purchasing && !this.state.loginToContinueModal ?
                     <Modal show={this.state.purchasing} dismiss={this.purchaseHandler}>
                         {orderSummary}
                     </Modal>
                     : null}
                 {burger}
+                {this.state.loginToContinueModal ? (
+                    <Modal show={this.state.loginToContinueModal} dismiss={this.dismissInformativeModal}>
+                        <InformativeModal
+                            dismissModal={this.dismissInformativeModal}
+                            onContinue={this.goToLoginToContinue} />
+                    </Modal>
+                ) : null}
             </Aux>
         );
     }
 }
 
+const actionCreators = {
+    onAddIngredient,
+    onRemoveIngredient,
+    onSaveIngredients,
+    onFetchInitialIngredients,
+    cleanRedirect
+}
+
+const mapStateToProps = state => {
+    return {
+        ingredients: state.ingredientsReducer.ingredients,
+        totalPrice: state.ingredientsReducer.totalPrice,
+        error: state.ingredientsReducer.error,
+        alreadySetInitialState: state.ingredientsReducer.alreadySetInitialState,
+        isLogged: state.authReducer.tokenId !== null,
+        redirectTo: state.authReducer.redirectTo
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return bindActionCreators(actionCreators, dispatch)
+}
+
 // We pass the 'BuilderBurger' component, and the instance of axios, so with that
 // we can call do the http request to firebase
-export default withErrorHandler(BuilderBurger, axios);
+BuilderBurger = withErrorHandler(BuilderBurger, axios)
+export default connect(mapStateToProps, mapDispatchToProps)(BuilderBurger)

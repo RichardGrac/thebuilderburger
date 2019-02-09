@@ -2,7 +2,7 @@ import React from 'react'
 import Classes from './Order.css'
 
 const Order = (props) => {
-    const {ingredients, price} = props.order
+    const {ingredients, price, date} = props.order
 
     let items = []
     for(let ingredient in ingredients) {
@@ -10,21 +10,25 @@ const Order = (props) => {
     }
 
     const tagStyle = {
-        margin: '0 8px',
+        margin: '3px 8px',
         border: '1px solid #ccc',
         padding: '8px',
         borderRadius: '3px',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        display: 'inline-block'
     }
 
     return (
         <div className={Classes.Order}>
             <p>
+                Date: {new Date(date).toLocaleDateString('en-US')}
+            </p>
+            <div>
                 Ingredients:
                 {items.map((item, i) => {
-                    return <span style={tagStyle} key={i}>{item}</span>
+                    return <div style={tagStyle} key={i}>{item}</div>
                 })}
-            </p>
+            </div>
             <p>Price: <strong>USD ${price.toFixed(2)}</strong></p>
         </div>
     )

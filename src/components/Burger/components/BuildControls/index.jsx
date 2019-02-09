@@ -27,14 +27,23 @@ const BuildControls = (props) => {
                     disableMoreButton={props.disabledMoreButtons[ctrl.type]}
                 />
             })}
-            <button
-                className={Classes.OrderButton}
-                disabled={!props.purchasable}
-                onClick={props.onPurchaseHandler}>
-                ORDER NOW
-            </button>
+            <div>
+                <button
+                    className={Classes.OrderButton}
+                    disabled={!props.purchasable}
+                    onClick={props.onPurchaseHandler}>
+                    ORDER NOW
+                </button>
+                <button
+                    className={Classes.OrderButton}
+                    onClick={props.resetBuilding}>
+                    RESET
+                </button>
+            </div>
+
         </div>
     );
 };
 
 export default BuildControls;
+
