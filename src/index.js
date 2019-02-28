@@ -9,12 +9,20 @@ import {createStore, applyMiddleware, compose} from 'redux'
 import {Provider} from 'react-redux'
 import {rootReducer} from './redux/reducers'
 
+import createSagaMiddleware from 'redux-saga'
+
 import thunk from 'redux-thunk'
-const composeEnhancers = process.env.NODE_ENV === 'environment' ?
+import {watchAuth, watchBurgerBuilder, watchOrders} from './sagas'
+
+const composeEnhancers = process.env.NODE_ENV === 'development' ?
     window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ : null || compose
 
+const sagaMiddleware = createSagaMiddleware()
+const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk, sagaMiddleware)))
 
-const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk)))
+sagaMiddleware.run(watchAuth)
+sagaMiddleware.run(watchBurgerBuilder)
+sagaMiddleware.run(watchOrders)
 
 const myApp = (
     <Provider store={store}>

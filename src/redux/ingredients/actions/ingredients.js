@@ -1,21 +1,5 @@
-import axios from '../../../axios/orders'
-
 export const onFetchInitialIngredients = () => {
-    return dispatch => {
-        axios.get('ingredients.json')
-            .then(response => {
-                dispatch({
-                    type: 'SET_INITIAL_INGREDIENTS',
-                    ingredients: response.data,
-                    totalPrice: 4
-                })
-            })
-            .catch(() => {
-                dispatch({
-                    type: 'ERROR_FETCHING_INGREDIENTS'
-                })
-            })
-    }
+    return { type: 'SET_INITIAL_ING' }
 }
 
 export const onAddIngredient = (ingredient, newTotalPrice) => {

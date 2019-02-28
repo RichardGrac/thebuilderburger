@@ -9,7 +9,7 @@ const controls = [
     {label: 'Meat', type: 'meat'}
 ]
 
-const BuildControls = (props) => {
+export const BuildControls = (props) => {
     return (
         <div className={Classes.BuildControls}>
             <p>Current price: {' '}

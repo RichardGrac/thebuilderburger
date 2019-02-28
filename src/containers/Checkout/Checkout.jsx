@@ -1,10 +1,10 @@
 import React, {Component} from 'react'
 import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary'
-import {CHECKOUT_URL, CONTACT_URL} from '../../utilities/constants'
+import {CHECKOUT_URL, CONTACT_URL, HOME_URL} from '../../utilities/constants'
 import {Route} from 'react-router-dom'
 import ContactData from './component/ContactData/ContactData'
 import {isObjectEmpty} from '../../utilities/functions'
-import {Redirect} from 'react-router'
+import {Redirect, withRouter} from 'react-router'
 
 import {connect} from 'react-redux'
 
@@ -21,7 +21,7 @@ class Checkout extends Component {
     }
 
     onCancelled = () => {
-        this.props.history.goBack()
+        this.props.history.push(HOME_URL)
     }
 
     continuePurchase = () => {
@@ -58,10 +58,4 @@ const mapStateToProps = state => {
     }
 }
 
-const mapDispatchToProps = dispatch => {
-    return {
-
-    }
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(Checkout)
+export default withRouter(connect(mapStateToProps, null)(Checkout))
