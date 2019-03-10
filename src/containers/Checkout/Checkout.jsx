@@ -1,4 +1,4 @@
-import React, {Component} from 'react'
+import React from 'react'
 import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary'
 import {CHECKOUT_URL, CONTACT_URL, HOME_URL} from '../../utilities/constants'
 import {Route} from 'react-router-dom'
@@ -8,47 +8,36 @@ import {Redirect, withRouter} from 'react-router'
 
 import {connect} from 'react-redux'
 
-class Checkout extends Component {
+const Checkout = props => {
+    const {ingredients, totalPrice} = props
 
-    state = {
-        totalPrice: 0,
-        ingredients: {}
+    const onCancelled = () => {
+        props.history.push(HOME_URL)
     }
 
-    componentWillReceiveProps(nextProps) {
-        const {ingredients, totalPrice} = nextProps
-        this.setState({ingredients, totalPrice})
-    }
-
-    onCancelled = () => {
-        this.props.history.push(HOME_URL)
-    }
-
-    continuePurchase = () => {
-        if (!isObjectEmpty({...this.state.ingredients})) {
-            this.props.history.replace(CONTACT_URL)
+    const continuePurchase = () => {
+        if (!isObjectEmpty({...ingredients})) {
+            props.history.replace(CONTACT_URL)
         }
     }
 
-    render() {
-        return (
-            <div>
-                <CheckoutSummary
-                    ingredients={this.state.ingredients}
-                    continuePurchase={this.continuePurchase}
-                    onCancelled={this.onCancelled}
-                />
+    return (
+        <div>
+            <CheckoutSummary
+                ingredients={ingredients}
+                continuePurchase={continuePurchase}
+                onCancelled={onCancelled}
+            />
 
-                {!isObjectEmpty({...this.state.ingredients}) ? (
-                    <Route path={CONTACT_URL} render={() => <ContactData
-                        ingredients={this.state.ingredients}
-                        totalPrice={this.state.totalPrice}
-                    />} />
-                ) : <Redirect to={CHECKOUT_URL} from={CONTACT_URL} />}
+            {!isObjectEmpty({...ingredients}) ? (
+                <Route path={CONTACT_URL} render={() => <ContactData
+                    ingredients={ingredients}
+                    totalPrice={totalPrice}
+                />} />
+            ) : <Redirect to={CHECKOUT_URL} from={CONTACT_URL} />}
 
-            </div>
-        )
-    }
+        </div>
+    )
 }
 
 const mapStateToProps = state => {

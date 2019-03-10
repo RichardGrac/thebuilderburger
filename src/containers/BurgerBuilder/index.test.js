@@ -3,6 +3,7 @@ import {configure, shallow} from 'enzyme'
 import Adapter from 'enzyme-adapter-react-16'
 import BurgerBuilder from './index'
 import BuildControls from '../../components/Burger/components/BuildControls'
+import Spinner from '../../components/UI/Spinner'
 
 configure({ adapter: new Adapter() })
 
@@ -24,4 +25,9 @@ describe(`<BurgerBuilder />`, () => {
         wrapper.setProps({ingredients})
         expect(wrapper.find(BuildControls)).toBeTruthy()
     })
+
+    test('Should show the <Spinner /> when ingredients have not being loaded.', () => {
+        wrapper.setProps({ingredients: {}})
+        wrapper.setState({error: false})
+        expect(wrapper.find(<Spinner />).exists()).toBeTruthy()})
 })

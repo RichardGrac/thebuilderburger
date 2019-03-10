@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useState, useEffect} from 'react';
 import Aux from "../../hoc/Auxiliar";
 import Burger from "../../components/Burger";
 import BuildControls from "../../components/Burger/components/BuildControls";
@@ -27,184 +27,147 @@ const INGREDIENT_PRICES = {
     bacon: 0.7
 }
 
-export class BuilderBurger extends Component {
+export let BuilderBurger = props => {
+    const {ingredients, totalPrice, error} = props
+    const [purchasing, setPurchasing] = useState(false)
+    const [loginToContinueModal, setLoginToContinueModal] = useState(false)
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            ingredients: this.props.ingredients,
-            totalPrice: this.props.totalPrice,
-
-            loading: false,
-            purchasable: false,
-            purchasing: false,
-            error: false,
-            loginToContinueModal: false
-        }
-    }
-
-    componentDidMount() {
-        if (this.props.redirectTo === CHECKOUT_URL) {
-            this.props.cleanRedirect()
-            this.props.history.push(CHECKOUT_URL)
+    useEffect(() => {
+        if (props.redirectTo === CHECKOUT_URL) {
+            props.cleanRedirect()
+            props.history.push(CHECKOUT_URL)
         }
 
-        if (!this.props.alreadySetInitialState) {
-            this.props.onFetchInitialIngredients()
+        if (!props.alreadySetInitialState) {
+            props.onFetchInitialIngredients()
         }
-        this.updatePurchaseState()
-    }
+    }, [])
 
-    componentWillReceiveProps(nextProps) {
-        this.setState({
-            ingredients: nextProps.ingredients,
-            totalPrice: nextProps.totalPrice,
-            error: nextProps.error
-        }, () => this.updatePurchaseState(this.state.ingredients))
-    }
-
-    updatePurchaseState(ingredients = this.state.ingredients) {
-        if (isObjectEmpty(ingredients)) {
-            return
-        }
-        const sum = Object.keys(ingredients)
+    const updatePurchaseState = (ing) => {
+        if (isObjectEmpty(ing)) return
+        const sum = Object.keys(ing)
             .map(igKey => {
-                return ingredients[igKey]
+                return ing[igKey]
             })
             .reduce((sum, el) => {
                 return sum + el
             }, 0)
-        this.setState({purchasable: sum > 0})
+        return sum > 0
     }
 
-    onAddIngredientHandler = type => {
-        this.UpdatingBurger(type, 1)
+    const onAddIngredientHandler = type => {
+        UpdatingBurger(type, 1)
     }
 
-    onRemoveIngredientHandler = type => {
-        this.UpdatingBurger(type, -1)
+    const onRemoveIngredientHandler = type => {
+        UpdatingBurger(type, -1)
     }
 
-    UpdatingBurger(type, moreOrLessIngredient) {
-        const oldCount = this.state.ingredients[type]
+    const UpdatingBurger = (type, moreOrLessIngredient) => {
+        const oldCount = ingredients[type]
         if (moreOrLessIngredient < 0 && oldCount <= 0){
             console.log(type + ' counter is equals 0, You cannot rest this ingredient')
             return
         } else {
             // Price update
             const priceAddition = INGREDIENT_PRICES[type]
-            const oldPrice = this.state.totalPrice
+            const oldPrice = totalPrice
             const newPrice = oldPrice + (priceAddition * moreOrLessIngredient)
 
             moreOrLessIngredient > 0 ?
-                this.props.onAddIngredient(type, newPrice) :
-                this.props.onRemoveIngredient(type, newPrice)
-            this.updatePurchaseState()
+                props.onAddIngredient(type, newPrice) :
+                props.onRemoveIngredient(type, newPrice)
         }
     }
 
-    purchaseHandler = () => {
-        this.setState((prevState) => {
-            return {
-                 purchasing: !prevState.purchasing
-            }
-        });
+    const purchaseHandler = () => {
+        setPurchasing(!purchasing)
     }
 
-    purchaseContinueHandler = () => {
-        this.props.onSaveIngredients({...this.state.ingredients}, this.state.totalPrice)
-        if (this.props.isLogged) {
-            this.props.history.push({
+    const purchaseContinueHandler = () => {
+        onSaveIngredients({...ingredients}, totalPrice)
+        if (props.isLogged) {
+            props.history.push({
                 pathname: CHECKOUT_URL,
             })
         } else {
-            this.setState({
-                loginToContinueModal: true
-            })
+            setLoginToContinueModal(true)
         }
     }
 
-    dismissInformativeModal = () => {
-        this.setState({
-            loginToContinueModal: false
-        })
+    const dismissInformativeModal = () => {
+        setLoginToContinueModal(false)
     }
 
-    goToLoginToContinue = () => {
-        this.props.history.push({
+    const goToLoginToContinue = () => {
+        props.history.push({
             pathname: SIGN_IN,
             hash: '#purchasing'
         })
     }
 
-    render() {
-        const disableLessButtons = {
-            ...this.state.ingredients
-        }
-        const disableMoreButtons = {
-            ...this.state.ingredients
-        }
-
-        for (let key in disableLessButtons){
-            disableLessButtons[key] = disableLessButtons[key] <= 0 // Returns true or false
-            disableMoreButtons[key] = disableMoreButtons[key] >= 3 // You cannot buy > 3 ingredients for each one
-        }
-
-        let orderSummary = null
-
-        let burger = this.state.error ? (
-            <h2 style={{textAlign: 'center'}}>
-                Ingredients can't be loaded
-            </h2>) : <Spinner />
-
-        // If we already got the 'ingredients' from Firebase
-        if(this.state.ingredients) {
-            burger = (
-                <Aux>
-                    <Burger ingredients={this.state.ingredients} />
-                    <BuildControls
-                        onAddIngredientHandler={this.onAddIngredientHandler}
-                        onRemoveIngredientHandler={this.onRemoveIngredientHandler}
-                        disabled={disableLessButtons}
-                        disabledMoreButtons={disableMoreButtons}
-                        purchasable={this.state.purchasable}
-                        price={this.state.totalPrice}
-                        onPurchaseHandler={this.purchaseHandler}
-                        resetBuilding={this.props.onFetchInitialIngredients}
-                    />
-                </Aux>
-            )
-            orderSummary = (
-                <OrderSummary
-                    summary={this.state.totalPrice}
-                    dismiss={this.purchaseHandler}
-                    purchaseContinue={this.purchaseContinueHandler}
-                    ingredients={this.state.ingredients}/>
-            )
-        }
-
-        if (this.state.loading) {
-            orderSummary = <Spinner />
-        }
-
-        return (
-            <Aux>
-                {this.state.purchasing && !this.state.loginToContinueModal ?
-                    <Modal show={this.state.purchasing} dismiss={this.purchaseHandler}>
-                        {orderSummary}
-                    </Modal>
-                    : null}
-                {burger}
-                {this.state.loginToContinueModal ? (
-                    <Modal show={this.state.loginToContinueModal} dismiss={this.dismissInformativeModal}>
-                        <InformativeModal
-                            dismissModal={this.dismissInformativeModal}
-                            onContinue={this.goToLoginToContinue} />
-                    </Modal>
-                ) : null}
-            </Aux>
-        );
+    const disableLessButtons = {
+        ...ingredients
     }
+    const disableMoreButtons = {
+        ...ingredients
+    }
+
+    for (let key in disableLessButtons){
+        disableLessButtons[key] = disableLessButtons[key] <= 0 // Returns true or false
+        disableMoreButtons[key] = disableMoreButtons[key] >= 3 // You cannot buy > 3 ingredients for each one
+    }
+
+    let orderSummary = null
+
+    let burger = error ? (
+        <h2 style={{textAlign: 'center'}}>
+            Ingredients can't be loaded
+        </h2>) : <Spinner />
+
+    // If we already got the 'ingredients' from Firebase
+    if(ingredients) {
+        burger = (
+            <Aux>
+                <Burger ingredients={ingredients} />
+                <BuildControls
+                    onAddIngredientHandler={onAddIngredientHandler}
+                    onRemoveIngredientHandler={onRemoveIngredientHandler}
+                    disabled={disableLessButtons}
+                    disabledMoreButtons={disableMoreButtons}
+                    purchasable={updatePurchaseState(ingredients)}
+                    price={totalPrice}
+                    onPurchaseHandler={purchaseHandler}
+                    resetBuilding={props.onFetchInitialIngredients}
+                />
+            </Aux>
+        )
+        orderSummary = (
+            <OrderSummary
+                summary={totalPrice}
+                dismiss={purchaseHandler}
+                purchaseContinue={purchaseContinueHandler}
+                ingredients={ingredients}/>
+        )
+    }
+
+    return (
+        <Aux>
+            {purchasing && !loginToContinueModal ?
+                <Modal show={purchasing} dismiss={purchaseHandler}>
+                    {orderSummary}
+                </Modal>
+                : null}
+            {burger}
+            {loginToContinueModal ? (
+                <Modal show={loginToContinueModal} dismiss={dismissInformativeModal}>
+                    <InformativeModal
+                        dismissModal={dismissInformativeModal}
+                        onContinue={goToLoginToContinue} />
+                </Modal>
+            ) : null}
+        </Aux>
+    );
 }
 
 const actionCreators = {
